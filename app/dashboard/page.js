@@ -4,8 +4,17 @@ import axios from "axios";
 
 const Dashboard = () => {
   const [records, setRecords] = useState([]);
-  const [newRecord, setNewRecord] = useState({ recordName: "", recordDescription: "" });
-  const [editingRecord, setEditingRecord] = useState(null);
+  const [newRecordData, setNewRecordData] = useState({
+    cars_make: "",
+    cars_model: "",
+    cars_year: "",
+  });
+  const [editRecordId, setEditRecordId] = useState(null);
+  const [editRecordData, setEditRecordData] = useState({
+    cars_make: "",
+    cars_model: "",
+    cars_year: "",
+  });
 
   useEffect(() => {
     fetchRecords();
@@ -25,84 +34,113 @@ const Dashboard = () => {
 
   const addRecord = async () => {
     try {
-        const response = await axios.post("http://localhost/p2ass/user.php", {
-            operation: "addRecord",
-            recordName: newRecord.recordName,
-            recordDescription: newRecord.recordDescription,
-        });
-        if (response.data.status === 1) {
-            setNewRecord({ recordName: "", recordDescription: "" });
-            fetchRecords();
-        } else {
-            alert(response.data.message || "Failed to add record");
-        }
-    } catch (error) {
-        console.error("Failed to add record:", error);
-    }
-};
-
-
-const updateRecord = async (id) => {
-    try {
-      const updatedRecord = {
-        operation: "updateRecord", // Match the operation name in PHP
-        recordId: id,
-        recordName: editingRecord.record_name,
-        recordDescription: editingRecord.record_description
-      };
-      const response = await axios.post("http://localhost/p2ass/user.php", updatedRecord);
-
-      if (response.data.success) {
-        setEditingRecord(null);
+      const response = await axios.post("http://localhost/p2ass/user.php", {
+        operation: "addRecord",
+        recordMake: newRecordData.cars_make,
+        recordModel: newRecordData.cars_model,
+        recordYear: newRecordData.cars_year,
+      });
+      if (response.data.status === 1) {
+        setNewRecordData({ cars_make: "", cars_model: "", cars_year: "" });
         fetchRecords();
       } else {
-        alert("Failed to update record: " + (response.data.error || "Unknown error"));
+        alert(response.data.message || "Failed to add record");
+      }
+    } catch (error) {
+      console.error("Failed to add record:", error);
+    }
+  };
+
+  const updateRecord = async (recordId) => {
+    try {
+      const response = await axios.post("http://localhost/p2ass/user.php", {
+        operation: "updateRecord",
+        recordId: recordId,
+        recordMake: editRecordData.cars_make,
+        recordModel: editRecordData.cars_model,
+        recordYear: editRecordData.cars_year,
+      });
+      if (response.data.success) {
+        setEditRecordId(null);
+        fetchRecords();
+      } else {
+        alert(response.data.error || "Failed to update record");
       }
     } catch (error) {
       console.error("Failed to update record:", error);
     }
   };
 
-
-  const deleteRecord = async (id) => {
+  const deleteRecord = async (recordId) => {
     try {
       const response = await axios.post("http://localhost/p2ass/user.php", {
-        operation: "deleteRecord", // Ensure this matches the operation name in PHP
-        recordId: id,
+        operation: "deleteRecord",
+        recordId: recordId,
       });
-
       if (response.data.success) {
         fetchRecords();
       } else {
-        alert("Failed to delete record: " + (response.data.error || "Unknown error"));
+        alert(response.data.error || "Failed to delete record");
       }
     } catch (error) {
       console.error("Failed to delete record:", error);
     }
   };
 
+  const handleNewInputChange = (e) => {
+    setNewRecordData({ ...newRecordData, [e.target.name]: e.target.value });
+  };
+
+  const handleEditInputChange = (e) => {
+    setEditRecordData({ ...editRecordData, [e.target.name]: e.target.value });
+  };
+
+  const handleEditClick = (record) => {
+    setEditRecordId(record.cars_id);
+    setEditRecordData({
+      cars_make: record.cars_make,
+      cars_model: record.cars_model,
+      cars_year: record.cars_year,
+    });
+  };
+
+  const handleCancelClick = () => {
+    setEditRecordId(null);
+    setEditRecordData({ cars_make: "", cars_model: "", cars_year: "" });
+  };
 
   return (
     <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Dashboard</h1>
-
       <div className="mb-6">
-        <h2 className="text-xl font-semibold mb-2">Add New Record</h2>
+        <h2 className="text-xl font-semibold mb-2">Add New Car</h2>
         <input
           type="text"
-          placeholder="Record Name"
-          value={newRecord.recordName}
-          onChange={(e) => setNewRecord({ ...newRecord, recordName: e.target.value })}
+          placeholder="Make"
+          name="cars_make"
+          value={newRecordData.cars_make}
+          onChange={handleNewInputChange}
           className="border p-2 mr-2"
         />
         <input
           type="text"
-          placeholder="Record Description"
-          value={newRecord.recordDescription}
-          onChange={(e) => setNewRecord({ ...newRecord, recordDescription: e.target.value })}
+          placeholder="Model"
+          name="cars_model"
+          value={newRecordData.cars_model}
+          onChange={handleNewInputChange}
           className="border p-2 mr-2"
         />
-        <button onClick={addRecord} className="bg-blue-500 text-white p-2 rounded">
+        <input
+          type="text"
+          placeholder="Year"
+          name="cars_year"
+          value={newRecordData.cars_year}
+          onChange={handleNewInputChange}
+          className="border p-2 mr-2"
+        />
+        <button
+          onClick={addRecord}
+          className="bg-blue-500 text-white p-2 rounded"
+        >
           Add Record
         </button>
       </div>
@@ -112,76 +150,95 @@ const updateRecord = async (id) => {
           <thead>
             <tr>
               <th className="py-2 px-4 border-b">ID</th>
-              <th className="py-2 px-4 border-b">Name</th>
-              <th className="py-2 px-4 border-b">Description</th>
-              <th className="py-2 px-4 border-b">Date and Time</th>
+              <th className="py-2 px-4 border-b">Make</th>
+              <th className="py-2 px-4 border-b">Model</th>
+              <th className="py-2 px-4 border-b">Year</th>
               <th className="py-2 px-4 border-b">Actions</th>
             </tr>
           </thead>
           <tbody>
             {records.map((record) => (
-              <tr key={record.record_id}>
-                <td className="py-2 px-4 border-b text-center">{record.record_id}</td>
-                <td className="py-2 px-4 border-b">
-                  {editingRecord?.record_id === record.record_id ? (
+              <tr key={record.cars_id}>
+                <td className="py-2 px-4 border-b text-center">
+                  {record.cars_id}
+                </td>
+                <td className="py-2 px-4 border-b text-center">
+                  {editRecordId === record.cars_id ? (
                     <input
                       type="text"
-                      value={editingRecord.record_name}
-                      onChange={(e) =>
-                        setEditingRecord({ ...editingRecord, record_name: e.target.value })
-                      }
+                      name="cars_make"
+                      value={editRecordData.cars_make}
+                      onChange={handleEditInputChange}
                       className="border p-2 w-full"
                     />
                   ) : (
-                    record.record_name
+                    record.cars_make
                   )}
                 </td>
                 <td className="py-2 px-4 border-b text-center">
-                  {editingRecord?.record_id === record.record_id ? (
+                  {editRecordId === record.cars_id ? (
                     <input
                       type="text"
-                      value={editingRecord.record_description}
-                      onChange={(e) =>
-                        setEditingRecord({ ...editingRecord, record_description: e.target.value })
-                      }
+                      name="cars_model"
+                      value={editRecordData.cars_model}
+                      onChange={handleEditInputChange}
                       className="border p-2 w-full"
                     />
                   ) : (
-                    record.record_description
+                    record.cars_model
                   )}
                 </td>
                 <td className="py-2 px-4 border-b text-center">
-                  {record.formatted_created_at}
-                </td>
-                <td className="py-2 px-4 border-b text-center">
-                  {editingRecord?.record_id === record.record_id ? (
-                    <button
-                      onClick={() => updateRecord(record.record_id)}
-                      className="bg-green-500 text-white p-2 rounded mr-2"
-                    >
-                      Save
-                    </button>
+                  {editRecordId === record.cars_id ? (
+                    <input
+                      type="text"
+                      name="cars_year"
+                      value={editRecordData.cars_year}
+                      onChange={handleEditInputChange}
+                      className="border p-2 w-full"
+                    />
                   ) : (
-                    <button
-                      onClick={() => setEditingRecord(record)}
-                      className="bg-yellow-500 text-white p-2 rounded mr-2"
-                    >
-                      Edit
-                    </button>
+                    record.cars_year
                   )}
-                  <button
-                    onClick={() => deleteRecord(record.record_id)}
-                    className="bg-red-500 text-white p-2 rounded"
-                  >
-                    Delete
-                  </button>
+                </td>
+                <td className="py-2 px-4 border-b text-center">
+                  {editRecordId === record.cars_id ? (
+                    <>
+                      <button
+                        onClick={() => updateRecord(record.cars_id)}
+                        className="bg-yellow-500 text-white p-2 rounded mr-2"
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={handleCancelClick}
+                        className="bg-gray-500 text-white p-2 rounded"
+                      >
+                        Cancel
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        onClick={() => handleEditClick(record)}
+                        className="bg-green-500 text-white p-2 rounded mr-2"
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => deleteRecord(record.cars_id)}
+                        className="bg-red-500 text-white p-2 rounded"
+                      >
+                        Delete
+                      </button>
+                    </>
+                  )}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-
     </div>
   );
 };

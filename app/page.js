@@ -1,13 +1,15 @@
-import React from 'react'
-import Dashboard from './dashboard/page'
+import React from "react";
+import Dashboard from "./dashboard/page";
+import Quiz from "./quiz/page";
 
 const page = () => {
   return (
     <>
-      <Dashboard/>
+      {/* <Dashboard/> */}
 
+      <Quiz />
     </>
-  )
-}
+  );
+};
 
-export default page
+export default page;
